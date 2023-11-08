@@ -2,22 +2,28 @@
 // Zadeklaruj odpowiednie typy dla zmiennych, biorąc pod uwagę przypisywane do nich wartości
 // Koniecznie przygotuj enum dla ról użytkowników i skorzystaj z niego przy `userRole`.
 
-let foo = 5;
+let foo: number | null = 5;
 foo = 10;
 foo = null;
 
-let bar = 'Foobar!';
+let bar: string = 'Foobar!';
 bar = 'test';
 
-let num = 5;
+let num: number | string | null = 5;
 num = '6';
 num = null
 
-let userRole = 'admin';
-userRole = 'user';
-userRole = 'moderator';
+enum UserRole {
+  Admin = 'admin',
+  User = 'user',
+  Moderator = 'moderator',
+}
 
-let userIsLogged = true;
+let userRole: UserRole = UserRole.Admin;
+userRole = UserRole.User;
+userRole = UserRole.Moderator;
+
+let userIsLogged: boolean = true;
 userIsLogged = false;
 
 //2.
@@ -33,62 +39,86 @@ userIsLogged = false;
 // 4. `numbers` powinno być potraktowane jako "sztywna" tablica, która zawsze ma mieć dokładnie taką strukturę jak teraz,
 // a więc posiadać dokładnie trzy elementy, gdzie dwa pierwsze powinny być numberem, a trzeci stringiem.
 
-const userOne = {
-    login: 'user1',
-    email: 'user1@gmail.com',
-    age: 20,
-    role: 'admin',
-    isLogged: true
-}
 
-const userTwo = {
-    login: 'user2',
-    email: 'user2@gmail.com',
-    age: 30,
-    role: 'moderator'
-}
+type User = {
+  login: string;
+  email: string;
+  age: number;
+  role: UserRole;
+  isLogged?: boolean;
+};
 
-const userThree = {
-    login: 'user3',
-    email: 'user3@gmail.com',
-    age: 40,
-    role: 'admin'
-}
+const userOne: User = {
+  login: 'user1',
+  email: 'user1@gmail.com',
+  age: 20,
+  role: UserRole.Admin,
+  isLogged: true,
+};
 
-const users = [];
-users.push(userOne, userTwo, userThree);
+const userTwo: User = {
+  login: 'user2',
+  email: 'user2@gmail.com',
+  age: 30,
+  role: UserRole.Moderator,
+};
 
-const numbers = [5, 8, '8'];
+const userThree: User = {
+  login: 'user3',
+  email: 'user3@gmail.com',
+  age: 40,
+  role: UserRole.Admin,
+};
 
-const arr = ['John', 'admin', 20]
+const users: User[] = [userOne, userTwo, userThree];
+
+const numbers: [number, number, string] = [5, 8, '8'];
+
+const arr: [string, UserRole, number] = ['John', UserRole.Admin, 20];
 
 //3.
 // Skonkretyzuj deklaracje funkcji, tak aby TS wiedział, czego powinien spodziewać się po argumentach, a także jaki będzie typ zwracanej wartości.
 // Wciąż pracujemy tu na tablicy `users` z zadania drugiego, więc możesz korzystać z typu `User` tam, gdzie uznasz to za stosowne.
-
 // Dla ambitnych: Spróbuj odnaleźć w dokumemtacji TS-a konstrukcję `keyof` i wykorzystać ją do otypowania parametrów funkcji, tam gdzie jest to możliwe.
 
-const addUser = (login, email, age, role) => {
-    const user = { login, email, age, role };
-    users.push(user);
-    return user;
-}
+const addUser = (login: string, email: string, age: number, role: UserRole): User => {
+  const user: User = { login, email, age, role };
+  users.push(user);
+  return user;
+};
 
-const removeUser = (paramName, paramValue) => {
-    const index = users.findIndex(user => user[paramName] === paramValue);
+type AddUserParams = {
+  login: string;
+  email: string;
+  age: number;
+  role: UserRole;
+};
+
+const addUserWithKeyof = ({ login, email, age, role }: AddUserParams): User => {
+  const user: User = { login, email, age, role };
+  users.push(user);
+  return user;
+};
+
+
+const removeUser = (paramName: keyof User, paramValue: any): boolean => {
+  const index = users.findIndex(user => user[paramName] === paramValue);
+  if (index !== -1) {
     users.splice(index, 1);
     return true;
-}
+  }
+  return false;
+};
 
-const addUsers = (...users) => {
-    for(const user of users) {
-        addUser(user.login, user.email, user.age, user.role);
-    }
-}
+const addUsers = (...newUsers: User[]): void => {
+  for (const user of newUsers) {
+    addUser(user.login, user.email, user.age, user.role);
+  }
+};
 
-const getUser = (paramName, paramValue) => {
-    return users.find(user => user[paramName] === paramValue);
-}
+const getUser = (paramName: keyof User, paramValue: any): User | undefined => {
+  return users.find(user => user[paramName] === paramValue);
+};
 
 //4.
 // Funkcja `parseField` powinna przyjmować albo tekst albo wiek.
@@ -99,22 +129,30 @@ const getUser = (paramName, paramValue) => {
 // Dodatkowo korzystając z "type guards" (if, typeof itd.), zmodyfikuj tę funkcję tak, aby uruchamiała tylko `parseEmail` albo tylko `parseAge`,
 // zależnie od tego, jaki jest typ `fieldValue` przy konkretnym wywołaniu.
 
-const parseEmail = (val: string): string => { return val }
-const parseAge = (val: number): number => { return val }
 
-const parseField = (fieldValue) => {
-    return parseEmail(fieldValue)
-    return parseAge(fieldValue)
-}
+const parseEmail = (val: string): string => { return val; }
+const parseAge = (val: number): number => { return val; }
+
+const parseField = (fieldValue: string | number): string | number => {
+  if (typeof fieldValue === 'string') {
+    return parseEmail(fieldValue);
+  } else if (typeof fieldValue === 'number') {
+    return parseAge(fieldValue);
+  } else {
+    return fieldValue;
+  }
+};
 
 //5.
 // Skonkretyzuj funkcję `titleClickHandler`. Zadbaj o to, aby TS wiedział iż `this` będzie w niej wskazywał na pewno na `HTMLButtonElement`.
 // Upewnij go również o tym, że `inputElem` zostanie znaleziony i jest to zwykły input (`HTMLInputElement`)
 
-const titleClickHandler = function() {
-    this.addEventListener('click', () => {
-        console.log('Kliknieto po operacji...')
-    })
-    const inputElem = document.querySelector('.input-elem');
-    inputElem.value = 'Gotowe!'
-}
+const titleClickHandler = function(this: HTMLButtonElement) {
+  this.addEventListener('click', () => {
+    console.log('Kliknieto po operacji...');
+  });
+  const inputElem = document.querySelector('.input-elem') as HTMLInputElement | null;
+  if (inputElem) {
+    inputElem.value = 'Gotowe!';
+  }
+};
